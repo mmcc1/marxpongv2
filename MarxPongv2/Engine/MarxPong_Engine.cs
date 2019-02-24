@@ -9,30 +9,30 @@ namespace MarxPongv2.Engine
 {
     class MarxPong_Engine
     {
-        MarxPongModel _mpm;
-        MarxPong_Collision _mpc;
-        MarxPong_Physics _mpp;
+        MarxPongModel marxPongModel;
+        MarxPong_Collision marxPongCollision;
+        MarxPong_Physics marxPongPhysics;
         
-        bool _end, _pause, _resetBall, _isBallGoingForward;
+        private bool end, pause, resetBall, isBallGoingForward;
 
-        public MarxPong_Engine(MarxPongModel _mpm)
+        public MarxPong_Engine(MarxPongModel marxPongModel)
         {
-            this._mpm = _mpm;
-            _mpc = new MarxPong_Collision(_mpm);
-            _mpp = new MarxPong_Physics();
+            this.marxPongModel = marxPongModel;
+            marxPongCollision = new MarxPong_Collision(this.marxPongModel);
+            marxPongPhysics = new MarxPong_Physics();
 
-            _resetBall = true;
-            _isBallGoingForward = true;
+            resetBall = true;
+            isBallGoingForward = true;
         }
 
-        public bool Pause { set { _pause = value; } }
-        public bool End { set { _end = value; } }
+        public bool Pause { set { pause = value; } }
+        public bool End { set { end = value; } }
 
         public void StartEngine()
         {
-            while (!_end)
+            while (!end)
             {
-                while (_pause)  //Pause execution and be nice
+                while (pause)  //Pause execution and be nice
                 {
                     //Thread.Sleep(500);
                 }
@@ -49,14 +49,14 @@ namespace MarxPongv2.Engine
         public void ExecuteGameStep()
         {
             //Exec AI
-            _mpm.ExecuteAI();
+            marxPongModel.ExecuteAI();
             //Test for collision and set flags
             SetCollisionInfo();
 
-            if (_resetBall)  //reset the ball position to start
+            if (resetBall)  //reset the ball position to start
             {
                 ResetBall();
-                _resetBall = false;
+                resetBall = false;
             }
             else  //update ball position
             {
@@ -68,65 +68,65 @@ namespace MarxPongv2.Engine
         {
             Random _rand = new Random((int)DateTime.Now.Ticks);
 
-            _mpm.BallX = _mpm.FinalScreenWidth / 2;
-            _mpm.BallY = _mpm.FinalScreenHeight / 2;
+            marxPongModel.BallX = marxPongModel.FinalScreenWidth / 2;
+            marxPongModel.BallY = marxPongModel.FinalScreenHeight / 2;
 
-            if(_isBallGoingForward)  //Toggle ball direction left/right depending on who last scored
-                _mpm.BallXVelocity = 5;
+            if(isBallGoingForward)  //Toggle ball direction left/right depending on who last scored
+                marxPongModel.BallXVelocity = 5;
             else
-                _mpm.BallXVelocity = -5;
+                marxPongModel.BallXVelocity = -5;
 
-            _mpm.BallYVelocity = _rand.Next(-10, 11);
+            marxPongModel.BallYVelocity = _rand.Next(-10, 11);
         }
 
         public void UpdateBall()
         {
-            _mpm.BallX += _mpm.BallXVelocity;
-            _mpm.BallY += _mpm.BallYVelocity;
+            marxPongModel.BallX += marxPongModel.BallXVelocity;
+            marxPongModel.BallY += marxPongModel.BallYVelocity;
         }
 
         private void SetCollisionInfo()
         {
-            int _collisionResult = _mpc.CollisionDetection();
+            int _collisionResult = marxPongCollision.CollisionDetection();
 
             switch (_collisionResult)
             {
                 case 0:  //nothing
                     return;
                 case 1:  //hit top of screen
-                    _mpm.BallYVelocity = _mpp.BounceReverse(_mpm.BallYVelocity);
+                    marxPongModel.BallYVelocity = marxPongPhysics.BounceReverse(marxPongModel.BallYVelocity);
                     break;
                 case 2:  //hit top of screen
-                    _mpm.BallYVelocity = _mpp.BounceReverse(_mpm.BallYVelocity);
+                    marxPongModel.BallYVelocity = marxPongPhysics.BounceReverse(marxPongModel.BallYVelocity);
                     break;
                 case 3: //Hit left paddle
                     {
-                        _mpm.BallXVelocity = _mpp.BounceReverse(_mpm.BallXVelocity);
-                        _mpm.LPNumHits++;
+                        marxPongModel.BallXVelocity = marxPongPhysics.BounceReverse(marxPongModel.BallXVelocity);
+                        marxPongModel.LPNumHits++;
                     }
                     break;
                 case 4: //Missed left paddle
                     {
-                        _mpm.Player1Score++;
-                        _mpm.LeftPaddleDeathrate++;
-                        _mpm.LPNumMiss++;
-                        _resetBall = true;
-                        _isBallGoingForward = true;  //Reverse direction of reset ball
+                        marxPongModel.Player1Score++;
+                        marxPongModel.LeftPaddleDeathrate++;
+                        marxPongModel.LPNumMiss++;
+                        resetBall = true;
+                        isBallGoingForward = true;  //Reverse direction of reset ball
                     }
                     break;
                 case 5:  //Hit right paddle
                     {
-                        _mpm.BallXVelocity = _mpp.BounceReverse(_mpm.BallXVelocity);
-                        _mpm.RPNumHits++;
+                        marxPongModel.BallXVelocity = marxPongPhysics.BounceReverse(marxPongModel.BallXVelocity);
+                        marxPongModel.RPNumHits++;
                     }
                     break;
                 case 6:  //Miss right paddle
                     {
-                        _mpm.Player2Score++;
-                        _mpm.RightPaddleDeathrate++;
-                        _mpm.RPNumMiss++;
-                        _resetBall = true;
-                        _isBallGoingForward = false;  //Reverse direction of reset ball
+                        marxPongModel.Player2Score++;
+                        marxPongModel.RightPaddleDeathrate++;
+                        marxPongModel.RPNumMiss++;
+                        resetBall = true;
+                        isBallGoingForward = false;  //Reverse direction of reset ball
                     }
                     break;
                 default:

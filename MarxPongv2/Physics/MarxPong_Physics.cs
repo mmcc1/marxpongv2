@@ -12,9 +12,9 @@ namespace MarxPongv2.Physics
         {
         }
 
-        public int BounceReverse(int _val)
+        public int BounceReverse(int val)
         {
-            return -_val;
+            return -val;
         }
     }
 }

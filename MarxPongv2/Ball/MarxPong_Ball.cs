@@ -1,42 +1,28 @@
-﻿using System;
-using System.Windows.Forms;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace MarxPongv2.Ball
 {
-    class MarxPong_Ball
+    public class MarxPong_Ball
     {
-        private int _ballY, _ballX, _ballXVelocity, _ballYVelocity;
-
-        #region Constructor and Deconstructor
-
-        public MarxPong_Ball()
-        {
-        }
-
-        ~MarxPong_Ball()
-        {
-        }
-
-        #endregion
+        private int ballY, ballX, ballXVelocity, ballYVelocity;
 
         #region Properties
 
-        public int BallY { get { return _ballY; } set { _ballY = value; } }
-        public int BallX { get { return _ballX; } set { _ballX = value; } }
-        public int BallYVelocity { get { return _ballYVelocity; } set { _ballYVelocity = value; } }
-        public int BallXVelocity { get { return _ballXVelocity; } set { _ballXVelocity = value; } }
+        public int BallY { get { return ballY; } set { ballY = value; } }
+        public int BallX { get { return ballX; } set { ballX = value; } }
+        public int BallYVelocity { get { return ballYVelocity; } set { ballYVelocity = value; } }
+        public int BallXVelocity { get { return ballXVelocity; } set { ballXVelocity = value; } }
 
         #endregion
 
         #region Draw the ball
 
-        public void DrawBall(Bitmap _e)
+        public void DrawBall(Bitmap e)
         {
-            Graphics _g = Graphics.FromImage(_e);
-
-            Brush _brush = new SolidBrush(Color.White);
-            _g.FillRectangle(_brush, new Rectangle(_ballX, _ballY, 10, 10));
+            using (Graphics g = Graphics.FromImage(e))
+            {
+                g.FillRectangle(new SolidBrush(Color.White), new Rectangle(ballX, ballY, 10, 10));
+            }
         }
 
         #endregion

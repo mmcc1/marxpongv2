@@ -15,57 +15,57 @@ namespace MarxPongv2.AI
 
     class MarxPong_AI
     {
-        MarxPongModel _mpm;
-        int _playernumber;  // 0 or 1 - Left or right respectively
-        bool _isInitialised;
+        MarxPongModel marxPongModel;
+        int playerNumber;  // 0 or 1 - Left or right respectively
+        bool isInitialised;
 
         //Neural Network
-        private Weights[] _nnWeights;  //Weights for neural network
-        private int _paddleY;
-        private double[] _hnOutput;  //output activations from hidden networks
+        private Weights[] nnWeights;  //Weights for neural network
+        private int paddleY;
+        private double[] hnOutput;  //output activations from hidden networks
 
         //Genetic Algorithm
-        private Weights[] _gaParent1;  //weights/genome - most successful weights from NN
-        private Weights[] _gaParent2;  //weights/genome - most successful weights from NN
-        private int _currentHits;
-        private int _previousHits;
-        private bool _updatePreviousHits;
-        private bool _initialParent1Found, _initialParent2Found;  //need valid weights/genome (a random success) before we can begin evolution
-        private bool _updateParentToggle;
-        private bool[] _shouldKeepValue;  //Flags to determine which part of genome to keep
-        private int _paddleDeathrate;
+        private Weights[] gaParent1;  //weights/genome - most successful weights from NN
+        private Weights[] gaParent2;  //weights/genome - most successful weights from NN
+        private int currentHits;
+        private int previousHits;
+        private bool updatePreviousHits;
+        private bool initialParent1Found, initialParent2Found;  //need valid weights/genome (a random success) before we can begin evolution
+        private bool updateParentToggle;
+        private bool[] shouldKeepValue;  //Flags to determine which part of genome to keep
+        private int paddleDeathrate;
         //private int _totalDeathrate;
-        private bool _updatePaddleDeathrate;
+        private bool updatePaddleDeathrate;
 
         //Output to paddle
-        int _result;
+        int result;
 
         public MarxPong_AI(MarxPongModel _mpm, int _playernumber)
         {
-            this._mpm = _mpm;
-            this._playernumber = _playernumber;
+            this.marxPongModel = _mpm;
+            this.playerNumber = _playernumber;
 
-            _gaParent1 = new Weights[7];
-            _gaParent2 = new Weights[7];
-            _nnWeights = new Weights[7];
-            _hnOutput = new double[6];
-            _shouldKeepValue = new bool[42];
+            gaParent1 = new Weights[7];
+            gaParent2 = new Weights[7];
+            nnWeights = new Weights[7];
+            hnOutput = new double[6];
+            shouldKeepValue = new bool[42];
         }
 
         public int ExecuteAI()
         {
             CopyValuesFromModel();  //Move some values into variables in this class
 
-            if (!_isInitialised)  //When first executed, we populate the weights randomly.
+            if (!isInitialised)  //When first executed, we populate the weights randomly.
             {
                 InitNNWeights();
-                _isInitialised = true;
+                isInitialised = true;
             }
 
             ExecuteGA();
             HiddenNetwork(6);
 
-            _mpm.PopulateInfo();
+            marxPongModel.PopulateInfo();
 
             CopyValuesToModel();  //Move some values from this class back to the model.
 
@@ -76,50 +76,50 @@ namespace MarxPongv2.AI
 
         public void CopyValuesFromModel()
         {
-            if (_playernumber == 0)
+            if (playerNumber == 0)
             {
-                _currentHits = _mpm.LPNumHits;
-                _paddleY = _mpm.LeftPaddleY;
-                _previousHits = _mpm.LPCurMaxNumHits;
-                _paddleDeathrate = _mpm.LeftPaddleDeathrate;
+                currentHits = marxPongModel.LPNumHits;
+                paddleY = marxPongModel.LeftPaddleY;
+                previousHits = marxPongModel.LPCurMaxNumHits;
+                paddleDeathrate = marxPongModel.LeftPaddleDeathrate;
             }
             else
             {
-                _currentHits = _mpm.RPNumHits;
-                _paddleY = _mpm.RightPaddleY;
-                _previousHits = _mpm.RPCurMaxNumHits;
-                _paddleDeathrate = _mpm.RightPaddleDeathrate;
+                currentHits = marxPongModel.RPNumHits;
+                paddleY = marxPongModel.RightPaddleY;
+                previousHits = marxPongModel.RPCurMaxNumHits;
+                paddleDeathrate = marxPongModel.RightPaddleDeathrate;
             }
         }
 
         public void CopyValuesToModel()
         {
-            if (_updatePreviousHits && _playernumber == 0)
+            if (updatePreviousHits && playerNumber == 0)
             {
-                _mpm.LPCurMaxNumHits = _previousHits;
-                _mpm.LPNumHits = 0;               
+                marxPongModel.LPCurMaxNumHits = previousHits;
+                marxPongModel.LPNumHits = 0;               
             }
 
-            if (_updatePreviousHits && _playernumber == 1)
+            if (updatePreviousHits && playerNumber == 1)
             {
-                _mpm.RPCurMaxNumHits = _previousHits;
-                _mpm.RPNumHits = 0;  
+                marxPongModel.RPCurMaxNumHits = previousHits;
+                marxPongModel.RPNumHits = 0;  
             }
 
-            if (_updatePaddleDeathrate && _playernumber == 0)
+            if (updatePaddleDeathrate && playerNumber == 0)
             {
-                _mpm.LeftPaddleDeathrate = 0;
-                _mpm.LPNumMiss = 0;
+                marxPongModel.LeftPaddleDeathrate = 0;
+                marxPongModel.LPNumMiss = 0;
             }
 
-            if (_updatePaddleDeathrate && _playernumber == 1)
+            if (updatePaddleDeathrate && playerNumber == 1)
             {
-                _mpm.RightPaddleDeathrate = 0;
-                _mpm.RPNumMiss = 0;
+                marxPongModel.RightPaddleDeathrate = 0;
+                marxPongModel.RPNumMiss = 0;
             }
 
-            _updatePreviousHits = false;
-            _updatePaddleDeathrate = false;
+            updatePreviousHits = false;
+            updatePaddleDeathrate = false;
         }
 
         #endregion
@@ -130,78 +130,78 @@ namespace MarxPongv2.AI
         {
             for (int i = 0; i < _numLayers; i++)
             {
-                double activation = (_mpm.BallX * _nnWeights[i].w0) + (_mpm.BallY * _nnWeights[i].w1) + (_mpm.BallXVelocity * _nnWeights[i].w2) + (_mpm.BallYVelocity * _nnWeights[i].w3) + (_paddleY * _nnWeights[i].w4);
-                _hnOutput[i] = 1.0 / (1.0 + Math.Exp(-activation));
+                double activation = (marxPongModel.BallX * nnWeights[i].w0) + (marxPongModel.BallY * nnWeights[i].w1) + (marxPongModel.BallXVelocity * nnWeights[i].w2) + (marxPongModel.BallYVelocity * nnWeights[i].w3) + (paddleY * nnWeights[i].w4);
+                hnOutput[i] = 1.0 / (1.0 + Math.Exp(-activation));
             }
         }
 
         private int OutputNetwork()
         {
-            double activation = (_hnOutput[0] * _nnWeights[6].w0) + (_hnOutput[1] * _nnWeights[6].w1) + (_hnOutput[2] * _nnWeights[6].w2) + (_hnOutput[3] * _nnWeights[6].w3) + (_hnOutput[4] * _nnWeights[6].w4) + (_hnOutput[5] * _nnWeights[6].w5);
+            double activation = (hnOutput[0] * nnWeights[6].w0) + (hnOutput[1] * nnWeights[6].w1) + (hnOutput[2] * nnWeights[6].w2) + (hnOutput[3] * nnWeights[6].w3) + (hnOutput[4] * nnWeights[6].w4) + (hnOutput[5] * nnWeights[6].w5);
 
             double output = 1.0 / (1.0 + Math.Exp(-activation));
 
             if (output <= 0.5)
-                _result = -10; //Move paddle upwards
+                result = -10; //Move paddle upwards
             else
-                _result = 10;  //Move paddle downwards
+                result = 10;  //Move paddle downwards
 
-            return _result;
+            return result;
         }
 
         #endregion
 
         private void InitNNWeights()
         {
-            Random _rand = new Random((int)DateTime.Now.Ticks);
+            Random rand = new Random((int)DateTime.Now.Ticks);
 
             for (int i = 0; i < 7; i++)
             {
-                _nnWeights[i].w0 = _rand.NextDouble();
-                _nnWeights[i].w1 = _rand.NextDouble();
-                _nnWeights[i].w2 = _rand.NextDouble();
-                _nnWeights[i].w3 = _rand.NextDouble();
-                _nnWeights[i].w4 = _rand.NextDouble();
-                _nnWeights[i].w5 = _rand.NextDouble();
+                nnWeights[i].w0 = rand.NextDouble();
+                nnWeights[i].w1 = rand.NextDouble();
+                nnWeights[i].w2 = rand.NextDouble();
+                nnWeights[i].w3 = rand.NextDouble();
+                nnWeights[i].w4 = rand.NextDouble();
+                nnWeights[i].w5 = rand.NextDouble();
 
-                if (_rand.Next(1, 3) == 1)
-                    _nnWeights[i].w0 = -_nnWeights[i].w0;
-                if (_rand.Next(1, 3) == 1)
-                    _nnWeights[i].w1 = -_nnWeights[i].w1;
-                if (_rand.Next(1, 3) == 1)
-                    _nnWeights[i].w2 = -_nnWeights[i].w2;
-                if (_rand.Next(1, 3) == 1)
-                    _nnWeights[i].w3 = -_nnWeights[i].w3;
-                if (_rand.Next(1, 3) == 1)
-                    _nnWeights[i].w4 = -_nnWeights[i].w4;
-                if (_rand.Next(1, 3) == 1)
-                    _nnWeights[i].w5 = -_nnWeights[i].w5;
+                if (rand.Next(1, 3) == 1)
+                    nnWeights[i].w0 = -nnWeights[i].w0;
+                if (rand.Next(1, 3) == 1)
+                    nnWeights[i].w1 = -nnWeights[i].w1;
+                if (rand.Next(1, 3) == 1)
+                    nnWeights[i].w2 = -nnWeights[i].w2;
+                if (rand.Next(1, 3) == 1)
+                    nnWeights[i].w3 = -nnWeights[i].w3;
+                if (rand.Next(1, 3) == 1)
+                    nnWeights[i].w4 = -nnWeights[i].w4;
+                if (rand.Next(1, 3) == 1)
+                    nnWeights[i].w5 = -nnWeights[i].w5;
             }
         }
 
         private void ExecuteGA()
         {
-            if (_paddleDeathrate >= _mpm.SelectedDeathrate && _initialParent1Found && _initialParent2Found)  //Can't begin evolution if we don't have two successful sets of weights/genomes
+            if (paddleDeathrate >= marxPongModel.SelectedDeathrate && initialParent1Found && initialParent2Found)  //Can't begin evolution if we don't have two successful sets of weights/genomes
             {
                 //If the paddle misses the ball a greater number of times than the set limit (1-4), then evolve a new solution.
                 FitnessAndCrossover();
                 RandomMutation();
-                _paddleDeathrate = 0; //Reset counter
-                _updatePaddleDeathrate = true;  //flag to indicate that model should be updated
-                _mpm.IterationCount++;
+                paddleDeathrate = 0; //Reset counter
+                updatePaddleDeathrate = true;  //flag to indicate that model should be updated
+                marxPongModel.IterationCount++;
             }
             else
             {
-                if (_currentHits > _previousHits)  //If the current weights of the NN are better
+                if (currentHits > previousHits)  //If the current weights of the NN are better
                 {
                     UpdateParents();  //Set current weights as the new parents
-                    _previousHits = _currentHits;  //set the new high hit rate to beat
-                    _currentHits = 0;  //reset the number of times the paddle has hit the ball in a row
-                    _updatePreviousHits = true;  //flag to indicate that model should be updated
+                    previousHits = currentHits;  //set the new high hit rate to beat
+                    currentHits = 0;  //reset the number of times the paddle has hit the ball in a row
+                    updatePreviousHits = true;  //flag to indicate that model should be updated
                 }
 
-                for(int i = 0; i < _shouldKeepValue.Length; i++)
-                    _shouldKeepValue[i] = false;
+                for(int i = 0; i < shouldKeepValue.Length; i++)
+                    shouldKeepValue[i] = false;
 
                 RandomMutation();
             }
@@ -209,35 +209,35 @@ namespace MarxPongv2.AI
 
         private void UpdateParents()  //Copies current NN weights to parents
         {
-            if (!_updateParentToggle)
+            if (!updateParentToggle)
             {
                 for (int i = 0; i < 7; i++)
                 {
-                    _gaParent1[i].w0 = _nnWeights[i].w0;
-                    _gaParent1[i].w1 = _nnWeights[i].w1;
-                    _gaParent1[i].w2 = _nnWeights[i].w2;
-                    _gaParent1[i].w3 = _nnWeights[i].w3;
-                    _gaParent1[i].w4 = _nnWeights[i].w4;
-                    _gaParent1[i].w5 = _nnWeights[i].w5;
+                    gaParent1[i].w0 = nnWeights[i].w0;
+                    gaParent1[i].w1 = nnWeights[i].w1;
+                    gaParent1[i].w2 = nnWeights[i].w2;
+                    gaParent1[i].w3 = nnWeights[i].w3;
+                    gaParent1[i].w4 = nnWeights[i].w4;
+                    gaParent1[i].w5 = nnWeights[i].w5;
                 }
 
-                _updateParentToggle = true;
-                _initialParent1Found = true;
+                updateParentToggle = true;
+                initialParent1Found = true;
             }
             else
             {
                 for (int i = 0; i < 7; i++)
                 {
-                    _gaParent2[i].w0 = _nnWeights[i].w0;
-                    _gaParent2[i].w1 = _nnWeights[i].w1;
-                    _gaParent2[i].w2 = _nnWeights[i].w2;
-                    _gaParent2[i].w3 = _nnWeights[i].w3;
-                    _gaParent2[i].w4 = _nnWeights[i].w4;
-                    _gaParent2[i].w5 = _nnWeights[i].w5;
+                    gaParent2[i].w0 = nnWeights[i].w0;
+                    gaParent2[i].w1 = nnWeights[i].w1;
+                    gaParent2[i].w2 = nnWeights[i].w2;
+                    gaParent2[i].w3 = nnWeights[i].w3;
+                    gaParent2[i].w4 = nnWeights[i].w4;
+                    gaParent2[i].w5 = nnWeights[i].w5;
                 }
 
-                _updateParentToggle = false;
-                _initialParent2Found = true;
+                updateParentToggle = false;
+                initialParent2Found = true;
             }
         }
 
@@ -247,45 +247,45 @@ namespace MarxPongv2.AI
 
             for (int i = 0; i < 7; i++)
             {
-                if (((_gaParent1[i].w0 - _gaParent2[i].w0) < 0.2 && (_gaParent1[i].w0 - _gaParent2[i].w0) >= 0) || ((_gaParent1[i].w0 - _gaParent2[i].w0) > -0.2 && (_gaParent1[i].w0 - _gaParent2[i].w0) <= 0))
-                    _shouldKeepValue[index] = true;
+                if (((gaParent1[i].w0 - gaParent2[i].w0) < 0.2 && (gaParent1[i].w0 - gaParent2[i].w0) >= 0) || ((gaParent1[i].w0 - gaParent2[i].w0) > -0.2 && (gaParent1[i].w0 - gaParent2[i].w0) <= 0))
+                    shouldKeepValue[index] = true;
                 else
-                    _shouldKeepValue[index] = false;
+                    shouldKeepValue[index] = false;
 
                 index++;
 
-                if (((_gaParent1[i].w1 - _gaParent2[i].w1) < 0.2 && (_gaParent1[i].w1 - _gaParent2[i].w1) >= 0) || ((_gaParent1[i].w1 - _gaParent2[i].w1) > -0.2 && (_gaParent1[i].w1 - _gaParent2[i].w1) <= 0))
-                    _shouldKeepValue[index] = true;
+                if (((gaParent1[i].w1 - gaParent2[i].w1) < 0.2 && (gaParent1[i].w1 - gaParent2[i].w1) >= 0) || ((gaParent1[i].w1 - gaParent2[i].w1) > -0.2 && (gaParent1[i].w1 - gaParent2[i].w1) <= 0))
+                    shouldKeepValue[index] = true;
                 else
-                    _shouldKeepValue[index] = false;
+                    shouldKeepValue[index] = false;
 
                 index++;
 
-                if (((_gaParent1[i].w2 - _gaParent2[i].w2) < 0.2 && (_gaParent1[i].w2 - _gaParent2[i].w2) >= 2) || ((_gaParent1[i].w2 - _gaParent2[i].w2) > -0.2 && (_gaParent1[i].w2 - _gaParent2[i].w2) <= 0))
-                    _shouldKeepValue[index] = true;
+                if (((gaParent1[i].w2 - gaParent2[i].w2) < 0.2 && (gaParent1[i].w2 - gaParent2[i].w2) >= 2) || ((gaParent1[i].w2 - gaParent2[i].w2) > -0.2 && (gaParent1[i].w2 - gaParent2[i].w2) <= 0))
+                    shouldKeepValue[index] = true;
                 else
-                    _shouldKeepValue[index] = false;
+                    shouldKeepValue[index] = false;
 
                 index++;
 
-                if (((_gaParent1[i].w3 - _gaParent2[i].w3) < 0.2 && (_gaParent1[i].w3 - _gaParent2[i].w3) >= 0) || ((_gaParent1[i].w3 - _gaParent2[i].w3) > -0.2 && (_gaParent1[i].w3 - _gaParent2[i].w3) <= 0))
-                    _shouldKeepValue[index] = true;
+                if (((gaParent1[i].w3 - gaParent2[i].w3) < 0.2 && (gaParent1[i].w3 - gaParent2[i].w3) >= 0) || ((gaParent1[i].w3 - gaParent2[i].w3) > -0.2 && (gaParent1[i].w3 - gaParent2[i].w3) <= 0))
+                    shouldKeepValue[index] = true;
                 else
-                    _shouldKeepValue[index] = false;
+                    shouldKeepValue[index] = false;
 
                 index++;
 
-                if (((_gaParent1[i].w4 - _gaParent2[i].w4) < 0.2 && (_gaParent1[i].w4 - _gaParent2[i].w4) >= 0) || ((_gaParent1[i].w4 - _gaParent2[i].w4) > -0.2 && (_gaParent1[i].w4 - _gaParent2[i].w4) <= 0))
-                    _shouldKeepValue[index] = true;
+                if (((gaParent1[i].w4 - gaParent2[i].w4) < 0.2 && (gaParent1[i].w4 - gaParent2[i].w4) >= 0) || ((gaParent1[i].w4 - gaParent2[i].w4) > -0.2 && (gaParent1[i].w4 - gaParent2[i].w4) <= 0))
+                    shouldKeepValue[index] = true;
                 else
-                    _shouldKeepValue[index] = false;
+                    shouldKeepValue[index] = false;
 
                 index++;
 
-                if (((_gaParent1[i].w5 - _gaParent2[i].w5) < 0.2 && (_gaParent1[i].w5 - _gaParent2[i].w5) >= 0) || ((_gaParent1[i].w5 - _gaParent2[i].w5) > -0.2 && (_gaParent1[i].w5 - _gaParent2[i].w5) <= 0))
-                    _shouldKeepValue[index] = true;
+                if (((gaParent1[i].w5 - gaParent2[i].w5) < 0.2 && (gaParent1[i].w5 - gaParent2[i].w5) >= 0) || ((gaParent1[i].w5 - gaParent2[i].w5) > -0.2 && (gaParent1[i].w5 - gaParent2[i].w5) <= 0))
+                    shouldKeepValue[index] = true;
                 else
-                    _shouldKeepValue[index] = false;
+                    shouldKeepValue[index] = false;
 
                 index++;
             }
@@ -293,21 +293,21 @@ namespace MarxPongv2.AI
             //Prevent infinite loop
             bool _falseSolutionReset = true;
 
-            for (int i = 0; i < _shouldKeepValue.Length; i++)
+            for (int i = 0; i < shouldKeepValue.Length; i++)
             {
-                if (_shouldKeepValue[i] == false)
+                if (shouldKeepValue[i] == false)
                     _falseSolutionReset = false;
             }
 
             if (_falseSolutionReset)  //if all values are kept, dump the entire genome as a false solution, a real solution would not execute this function
             {
                 InitNNWeights();
-                _initialParent1Found = false;
-                _initialParent2Found = false;
-                _previousHits = 0;  //set the new high hit rate to beat
-                _currentHits = 0;  //reset the number of times the paddle has hit the ball in a row
-                _updatePreviousHits = true;  //flag to indicate that model should be updated
-                _updatePaddleDeathrate = true;
+                initialParent1Found = false;
+                initialParent2Found = false;
+                previousHits = 0;  //set the new high hit rate to beat
+                currentHits = 0;  //reset the number of times the paddle has hit the ball in a row
+                updatePreviousHits = true;  //flag to indicate that model should be updated
+                updatePaddleDeathrate = true;
             }
         }
 
@@ -318,68 +318,68 @@ namespace MarxPongv2.AI
 
             for (int i = 0; i < 7; i++)
             {
-                if (!_shouldKeepValue[index])
+                if (!shouldKeepValue[index])
                 {
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w0 = _rand.NextDouble();
+                        nnWeights[i].w0 = _rand.NextDouble();
 
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w0 = -_nnWeights[i].w0;
+                        nnWeights[i].w0 = -nnWeights[i].w0;
                 }
 
                 index++;
 
-                if (!_shouldKeepValue[index])
+                if (!shouldKeepValue[index])
                 {
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w1 = _rand.NextDouble();
+                        nnWeights[i].w1 = _rand.NextDouble();
 
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w1 = -_nnWeights[i].w1;
+                        nnWeights[i].w1 = -nnWeights[i].w1;
                 }
 
                 index++;
 
-                if (!_shouldKeepValue[index])
+                if (!shouldKeepValue[index])
                 {
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w2 = _rand.NextDouble();
+                        nnWeights[i].w2 = _rand.NextDouble();
 
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w2 = -_nnWeights[i].w2;
+                        nnWeights[i].w2 = -nnWeights[i].w2;
                 }
 
                 index++;
 
-                if (!_shouldKeepValue[index])
+                if (!shouldKeepValue[index])
                 {
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w3 = _rand.NextDouble();
+                        nnWeights[i].w3 = _rand.NextDouble();
 
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w3 = -_nnWeights[i].w3;
+                        nnWeights[i].w3 = -nnWeights[i].w3;
                 }
 
                 index++;
 
-                if (!_shouldKeepValue[index])
+                if (!shouldKeepValue[index])
                 {
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w4 = _rand.NextDouble();
+                        nnWeights[i].w4 = _rand.NextDouble();
 
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w4 = -_nnWeights[i].w4;
+                        nnWeights[i].w4 = -nnWeights[i].w4;
                 }
 
                 index++;
 
-                if (!_shouldKeepValue[index])
+                if (!shouldKeepValue[index])
                 {
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w5 = _rand.NextDouble();
+                        nnWeights[i].w5 = _rand.NextDouble();
 
                     if (_rand.Next(1, 3) == 1)
-                        _nnWeights[i].w5 = -_nnWeights[i].w5;
+                        nnWeights[i].w5 = -nnWeights[i].w5;
                 }
 
                 index++;

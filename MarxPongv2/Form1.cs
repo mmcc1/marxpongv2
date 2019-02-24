@@ -9,52 +9,43 @@ namespace MarxPongv2
 {
     public partial class Form1 : Form
     {
-        MarxPongModel _mpm;
-        MarxPong_Engine _mpe;
-        Thread _met;
-        bool _singleThread;
-        int _frameCount;
+        private MarxPongModel marxPongModel;
+        private MarxPong_Engine marxPongEngine;
+        private Thread thread;
+        private bool runRealTime;
 
         public Form1()
         {
             InitializeComponent();
-            _mpm = new MarxPongModel(1024, 768);
-            _mpe = new MarxPong_Engine(_mpm);
-            _met = new Thread(_mpe.StartEngine);
-            _singleThread = false;
+
+            marxPongModel = new MarxPongModel(1024, 768);
+            marxPongEngine = new MarxPong_Engine(marxPongModel);
+            thread = new Thread(marxPongEngine.StartEngine);
+            runRealTime = false;
             timer1.Enabled = false;
-            timer1.Interval = 5000;
+            timer1.Interval = 30;
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (_singleThread)
-                _mpe.RunSTEngine();
+            if (runRealTime)
+                marxPongEngine.RunSTEngine();
 
-            //if (_frameCount > 20)
-            //{
-                _mpm.render();
-                pictureBox1.Invalidate();
-                pictureBox1.BackgroundImage = _mpm.FinalScreen;
-                
-
-           //     if (_frameCount > 21)
-           //         _frameCount = 0;
-           // }
-
-           // _frameCount++;
+            marxPongModel.render();
+            pictureBox1.Invalidate();
+            pictureBox1.BackgroundImage = marxPongModel.FinalScreen;
         }
 
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _met.Abort();
+            thread.Abort();
             Application.Exit();
         }
 
         private void playToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (!_singleThread)
-                _met.Start();
+            if (!runRealTime)
+                thread.Start();
             
             
             timer1.Enabled = true;
